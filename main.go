@@ -14,7 +14,7 @@ type Board struct {
 }
 
 func main() {
-	width, height := 60, 30
+	width, height := 120, 60
 
 	currentBoard := generateRandomBoard(width, height)
 	for {
@@ -33,7 +33,7 @@ func generateRandomBoard(width int, height int) Board {
 	var board Board = generateEmptyBoard(width, height)
 	for x := range board.width {
 		for y := range board.height {
-			if rand.Intn(20) == 0 {
+			if rand.Intn(10) == 0 {
 				board.grid[y][x] = true
 			}
 		}
