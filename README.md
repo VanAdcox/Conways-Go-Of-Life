@@ -1,1 +1,1 @@
-Generate random Conways game of life boards with go! (only works in Windows terminals atm)
+Generate random Conways game of life boards with Go! (only works in Windows terminals atm)
