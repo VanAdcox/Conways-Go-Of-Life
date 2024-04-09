@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"os/exec"
+	"time"
 )
 
 type Board struct {
@@ -14,36 +16,80 @@ type Board struct {
 func main() {
 	width, height := 60, 30
 
-	currentBoard := generateEmptyBoard(width, height)
-	// nextBoard := generateEmptyBoard(width, height)
+	currentBoard := generateRandomBoard(width, height)
+	for {
 
-	setPixel(currentBoard, 0, 0, true)
-	setPixel(currentBoard, 1, 0, true)
-	setPixel(currentBoard, 1, 1, true)
-	setPixel(currentBoard, 2, 0, true)
-	printBoard(currentBoard)
-	fmt.Print(getNeighborValues(currentBoard, 1, 1))
+		printBoard(currentBoard)
+
+		var lastBoard Board = currentBoard
+
+		currentBoard = generateNextBoard(lastBoard)
+
+		time.Sleep(500 * time.Millisecond)
+	}
 
 }
+func generateRandomBoard(width int, height int) Board {
+	var board Board = generateEmptyBoard(width, height)
+	for x := range board.width {
+		for y := range board.height {
+			if rand.Intn(20) == 0 {
+				board.grid[y][x] = true
+			}
+		}
+	}
+	return board
+}
+
+/*
+	Rules: https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
+
+Any live cell with fewer than two live neighbors dies, as if by underpopulation.
+Any live cell with two or three live neighbors lives on to the next generation.
+Any live cell with more than three live neighbors dies, as if by overpopulation.
+Any dead cell with exactly three live neighbors becomes a live cell, as if by reproduction.
+*/
+func generateNextBoard(currentBoard Board) Board {
+	var newBoard Board = generateEmptyBoard(currentBoard.width, currentBoard.height)
+	for x := range currentBoard.width {
+		for y := range currentBoard.height {
+			isAlive := currentBoard.grid[y][x]
+			var aliveNeighbors int8 = countTrues(getNeighborValues(currentBoard, x, y))
+
+			if isAlive && (aliveNeighbors == 2 || aliveNeighbors == 3) {
+				setPixel(newBoard, x, y, true)
+			} else {
+				setPixel(newBoard, x, y, false)
+			}
+			if !isAlive && aliveNeighbors == 3 {
+				setPixel(newBoard, x, y, true)
+			}
+		}
+	}
+	return newBoard
+}
+func countTrues(boolSlice []bool) int8 {
+	var count int8 = 0
+	for i := range boolSlice {
+		if boolSlice[i] == true {
+			count++
+		}
+	}
+	return count
+}
+
 func getNeighborValues(board Board, x int, y int) []bool {
-
 	neighborValues := []bool{}
-
 	for _x := range 3 {
 		_x -= 1
 		for _y := range 3 {
 			_y -= 1
-
 			// check for out of bounds exceptions & not checking the passed pixel
-			if (_x+x == x && _y+y == y) || (_x+x > board.width || _y+y > board.height) || (_x+x < 0 || _y+y < 0) {
+			if (_x+x == x && _y+y == y) || (_x+x >= board.width || _y+y >= board.height) || (_x+x < 0 || _y+y < 0) {
 				continue
 			}
-			neighborValues = append(neighborValues, board.grid[x+_x][y+_y])
+			neighborValues = append(neighborValues, board.grid[y+_y][x+_x])
 		}
-		/*
-			fmt.Printf("x: %v y: %v Alive: %t ", x, y+i, board.grid[x][y+i])
-			fmt.Printf("x: %v y: %v Alive: %t ", x, y+i, board.gri[x][y+i])
-		*/
 	}
 	return neighborValues
 }
@@ -54,7 +100,6 @@ func setPixel(board Board, x int, y int, isAlive bool) {
 }
 
 func generateEmptyBoard(width int, height int) Board {
-
 	newBoard := make([][]bool, height)
 
 	for i := range height {
@@ -64,6 +109,7 @@ func generateEmptyBoard(width int, height int) Board {
 }
 
 func printBoard(board Board) {
+	// This only works on Windows but I wear deodorant so it effecting Linux doesn't matter
 	cmd := exec.Command("cmd", "/c", "cls")
 	cmd.Stdout = os.Stdout
 	cmd.Run()
